@@ -1,0 +1,320 @@
+---
+title: "Survey project"
+author: "Hasnaâ LATIQUE; Appanna"
+date: "1/22/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+About the Project / the survey
+The aim of our survey is to study whether or not Covid_19 has an impact on our daily lives
+
+Our target population: we shared it in groups of students and employees
+Sentimental analysis towards covid_19
+
+
+# Questions
+The Information we want to collect: 
+- Does the covid_19 have an impact on people's psychology, for instance Is there a relationship between covid_19 and stress, loneliness or any other negative feelings?
+- Is it responsible for some behavioral changes?
+- Does it have a relationship with jobs offers and internships?
+
+To do that, we are going to perform both univariate and bivariate descriptive analysis
+
+```{r}
+library(data.table)
+library(reshape2)
+library(tidyverse)
+library(ggplot2)
+library(pander)
+```
+
+
+#1.Import dataset
+#list the name of each variable (data column) and the first six rows of the dataset
+After uploading our data, we look at an overview of a part of it to check that it was correctly imported.
+Below is a glimpse at what the data frame looks like
+```{r}
+
+#results <- read.csv2("results-survey-Covid.csv", sep=";")
+results_data <- fread("results-survey-Covid.csv")
+class(results_data)
+```
+
+```{r}
+head(results_data)
+```
+
+
+#2.data preprocessing
+Remove the white spaces and special characters in the columns names
+```{r}
+names(results_data)<-str_replace_all(names(results_data), c(" " = ".", "\\s" = ".", "-"=".", "'"=".",'\\['=".",'\\]'=".", "\\?"="."))
+names(results_data)
+```
+
+```{r}
+names(results_data)[28] <- 'Stress.comments'  #duplicate column name changed
+names(results_data)
+```
+
+Rename columns
+```{r}
+results_data<-results_data %>% rename(Age=  How.old.are.you.,
+    Gender= What.is.your.ge..,
+    Livinginfo= Are.you.staying..,
+    Familyin = If.you.re.livin..,
+    Familyout = is.it.within.th..,
+    Friends = How.often.do.yo..,
+    Sadness = What.do.you.thi.....Sad.,
+    Stressfree = What.do.you.thi.....Normal.,
+    Frustration = What.do.you.thi.....Frustrated.,
+    Worry= What.do.you.thi.....Worried.,
+    Other.feeling= What.do.you.thi.....Other.,
+    Loneliness.rate = On.a.scale.of.0..,
+    Stress.rate= Are.you.stresse..,
+    Level.studies = If.you.re.a.stu..,
+    Internship = If.you.were.loo..,
+    Renumeration=is.it.,
+    Job= Has.COVID.19.im..,
+    Productivity = How.impactful.t..,
+    Productivity.comments = How.impactful.t.....Comment.,
+    Use.screen= What.changes.ha.....Use.of.screens.,
+    Physical.activity = What.changes.ha.....Physical.activity., 
+    Hours.sleep = What.changes.ha.....Hours.of.sleep.,
+    Stressful.things=Are.you.stresse..,
+    Other.comments = Do.you.have.any..,
+    Future.Contact=Can.we.contact...)
+```
+
+```{r}
+names(results_data)
+```
+
+Remove irrelevant columns
+```{r}
+results_data1<-subset(results_data,select=-c(Response.ID,Date.submitted,Last.page,Start.language, Seed ))
+summary(results_data1)
+```
+#Verify the type of each variable
+```{r}
+str(results_data1)
+```
+#Convert categorical columns to factors
+```{r}
+results_data2 <- as.data.frame(unclass(results_data1)) #read categorical columns as factors
+str(results_data2)
+
+```
+
+ 
+ # observations
+All of our variables are qualitative
+
+1.There are 23 variables in the dataset ( The target variable: Emotions and patterns changes due to Covid)
+
+2.All of our variables are qualitative
+
+
+
+
+#3.data analysis
+Now let's plot some graphs to gain better insights about our data-set and understand the existing patterns.
+#Univariate analyses
+we start with a uniform analysis of the variable age
+
+#Number of observations and frequencies
+```{r}
+for (names in colnames(results_data2)) {
+  print(names)
+  t <-table(results_data2[,names])
+  print(t)
+  print(round(prop.table(t)*100,2))
+}
+```
+
+#Bar chart (Not working)
+```{r}
+par (mfrow=c(1,1))
+for (names in colnames(results_data2)){
+  plot(results_data2[,names ], col="lightgreen", ylab = "Effectif", main=paste(names))
+}
+```
+
+
+#Pie chart
+```{r}
+for(names in colnames(results_data2)){
+  pie(table(results_data2[,names]),
+      col=c("chocolate", "chocolate4", "chocolate1", "chocolate2", "chocolate3"), main=paste(names))
+}
+par(mfrow = c(1,1))
+```
+
+
+
+
+```{r}
+ggplot(results_data2, aes(x = Gender)) + 
+  geom_bar(fill = "blue", 
+           colour="black") +
+  labs(x = "Gender", 
+       y = "Frequency", 
+       title = " Target gender")
+```
+The variable productivity
+```{r}
+ggplot(results_data2, aes(x = Productivity)) +
+  geom_bar()
+```
+
+
+
+
+#Bivariate analyses
+#between two qualitative variables
+
+```{r}
+str(results_data2)
+```
+
+
+#Define categories of data
+```{r}
+personal_stats<-c('Age','Gender','Livinginfo','Familyin','Familyout','Friends')
+symptoms<-c('Sadness','Stressfree','Frustration','Worry','Loneliness.rate', 'Stressful.things')
+professional_stats<-c('Level.studies','Internship','Renumeration','Job')
+habits<-c('Productivity','Use.screen','Physical.activity','Hours.sleep')
+comments<-c('Other.feeling','Productivity.comments','Stress.comments','Other.comments')
+
+```
+
+#Contingency tables
+## personal stats vs symptoms
+```{r}
+for (cat in personal_stats){
+  for (name in symptoms){
+    t<-table(results_data2[,cat],results_data2[,name])
+    print(paste0(cat,' vs ',name))
+    print(t)
+  }
+}
+```
+
+```{r}
+# In percentage of total number of observations
+t <- table(Read=results_data2$Friends,Loneliness=results_data2$Loneliness.rate)
+#round(prop.table(t)*100,2)
+# Just values
+
+## Percentage of column total
+t <- cbind(t, Total = rowSums(t))
+round(prop.table(t,2),2)
+
+## In percentage of line total
+#t <- rbind(t, Total = colSums(t))
+#round(prop.table(t,1),2)
+
+```
+
+## professional stats vs symptoms
+```{r}
+for (cat in professional_stats){
+  for (name in symptoms){
+    t<-table(results_data2[,cat],results_data2[,name])
+    print(paste0(cat,' vs ',name))
+    print(t)
+  }
+}
+```
+
+
+## personal_stats vs habits
+```{r}
+for (cat in personal_stats){
+  for (name in habits){
+    t<-table(results_data2[,cat],results_data2[,name])
+    print(paste0(cat,' vs ',name))
+    print(t)
+  }
+}
+```
+
+## professional stats vs habits
+```{r}
+for (cat in professional_stats){
+  for (name in habits){
+    t<-table(results_data2[,cat],results_data2[,name])
+    print(paste0(cat,' vs ',name))
+    print(t)
+  }
+}
+```
+## personal stats vs comments
+```{r}
+for (cat in personal_stats){
+  for (name in comments){
+    t<-table(results_data2[,cat],results_data2[,name])
+    print(paste0(cat,' vs ',name))
+    print(t)
+  }
+}
+```
+## proffesional stats vs comments
+```{r}
+for (cat in professional_stats){
+  for (name in habits){
+    t<-table(results_data2[,cat],results_data2[,name])
+    print(paste0(cat,' vs ',name))
+    print(t)
+  }
+}
+```
+
+
+```{r}
+ggplot(results_data2, 
+       aes(x = Age, 
+           fill = Gender)) + 
+  geom_bar(position = "stack")
+```
+
+```{r}
+results_data2 %>%
+    group_by(Worry,Job) %>%
+    summarize(frequency = n()) %>%
+    pander
+```
+
+What we can conclude from this is that job loss did not influence on the degree of worry
+
+```{r}
+results_data2 %>%
+    group_by(Worry,Livinginfo) %>%
+    summarize(frequency = n()) %>%
+    pander
+```
+
+
+```{r}
+results_data2 %>%
+    group_by(Stressful.things,Job) %>%
+    summarize(frequency = n()) %>%
+    pander
+```
+
+
+```{r}
+results_data %>%
+    group_by(Stressful.things,Livinginfo) %>%
+    summarize(frequency = n()) %>%
+    pander
+```
+
+
+
+
+
